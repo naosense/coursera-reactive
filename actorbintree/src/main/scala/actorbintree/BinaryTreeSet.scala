@@ -3,22 +3,20 @@
   */
 package actorbintree
 
-import akka.actor._
+import akka.actor.*
 import scala.collection.immutable.Queue
 
-object BinaryTreeSet {
+object BinaryTreeSet:
 
-  trait Operation {
+  trait Operation:
     def requester: ActorRef
 
     def id: Int
 
     def elem: Int
-  }
 
-  trait OperationReply {
+  trait OperationReply:
     def id: Int
-  }
 
   /** Request with identifier `id` to insert an element `elem` into the tree.
     * The actor at reference `requester` should be notified when this operation
@@ -48,18 +46,17 @@ object BinaryTreeSet {
 
   /** Message to signal successful completion of an insert or remove operation. */
   case class OperationFinished(id: Int) extends OperationReply
-}
 
-class BinaryTreeSet extends Actor with ActorLogging {
+class BinaryTreeSet extends Actor :
 
-  import BinaryTreeSet._
-  import BinaryTreeNode._
+  import BinaryTreeSet.*
+  import BinaryTreeNode.*
 
   def createRoot: ActorRef = context.actorOf(BinaryTreeNode.props(0, initiallyRemoved = true))
 
   var root = createRoot
 
-  // optional
+  // optional (used to stash incoming operations during garbage collection)
   var pendingQueue = Queue.empty[Operation]
 
   // optional
@@ -93,24 +90,27 @@ class BinaryTreeSet extends Actor with ActorLogging {
 
       context.become(normal)
   }
-}
 
-object BinaryTreeNode {
+object BinaryTreeNode:
   trait Position
 
   case object Left extends Position
   case object Right extends Position
 
   case class CopyTo(treeNode: ActorRef)
+  /**
+    * Acknowledges that a copy has been completed. This message should be sent
+    * from a node to its parent, when this node and all its children nodes have
+    * finished being copied.
+    */
   case object CopyFinished
 
   def props(elem: Int, initiallyRemoved: Boolean) = Props(classOf[BinaryTreeNode], elem, initiallyRemoved)
-}
 
-class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
+class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor :
 
-  import BinaryTreeNode._
-  import BinaryTreeSet._
+  import BinaryTreeNode.*
+  import BinaryTreeSet.*
 
   var subtrees = Map[Position, ActorRef]()
   var removed = initiallyRemoved
@@ -214,4 +214,5 @@ class BinaryTreeNode(val elem: Int, initiallyRemoved: Boolean) extends Actor {
         context.become(copying(newExpected, insertConfirmed))
       }
   }
-}
+
+
